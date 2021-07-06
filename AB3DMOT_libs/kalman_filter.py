@@ -13,6 +13,9 @@ class KalmanBoxTracker(object):
 		"""
 		Initialises a tracker using initial bounding box.
 		"""
+		# print(bbox3D) [x,y,z,theta,l,w,h]
+		# print(info)
+
 		# define constant velocity model
 		self.kf = KalmanFilter(dim_x=10, dim_z=7)       
 		self.kf.F = np.array([[1,0,0,0,0,0,0,1,0,0],      # state transition matrix
@@ -58,12 +61,47 @@ class KalmanBoxTracker(object):
 
 		
 		# self.kf.R[0:,0:] *= 10.   # measurement uncertainty
+
+		# Note detection score is info[6]
+		# Must be [x,y,z,theta,l,w,h] while info is in [h,w,l,x,y,z,rot_y]
+		variances = (info[7:14] + 0.0)
+		# variances[:] = (1 - info[6]) * 2.0
+		self.kf.R[0][0] = variances[3]
+		self.kf.R[1][1] = variances[4]
+		self.kf.R[2][2] = variances[5]
+		self.kf.R[3][3] = variances[6]
+		self.kf.R[4][4] = variances[0]
+		self.kf.R[5][5] = variances[1]
+		self.kf.R[6][6] = variances[2]
+
 		self.kf.P[7:, 7:] *= 1000. 	# state uncertainty, give high uncertainty to the unobservable initial velocities, covariance matrix
 		self.kf.P *= 10.
 
 		# self.kf.Q[-1,-1] *= 0.01    # process uncertainty
 		self.kf.Q[7:, 7:] *= 0.01
+		# self.kf.Q[:7, :7] *= 0.40 # added
+		# self.kf.Q[0][0] = 1.2 # h
+		# self.kf.Q[1][1] = 0.175 # w
+		# self.kf.Q[2][2] = 0.10 # l
+		# self.kf.Q[3][3] = 1.0 # angle
+		# self.kf.Q[4][4] = 0.25 # x
+		# self.kf.Q[5][5] = 0.16 # y
+		# self.kf.Q[6][6] = 1.4 # z
+		# print(self.kf.Q)
+		# exit()
+
 		self.kf.x[:7] = bbox3D.reshape((7, 1))
+
+		# print('')
+		# print('R', self.kf.R)
+		# print('')
+		# print('P', self.kf.P)
+		# print('')
+		# print('Q', self.kf.Q)
+		# print('')
+		# print('x', self.kf.x)
+		# print('')
+		# exit()
 
 		self.time_since_update = 0
 		self.id = KalmanBoxTracker.count
@@ -109,7 +147,18 @@ class KalmanBoxTracker(object):
 
 		#########################     # flip
 
-		self.kf.update(bbox3D)
+		# Update the R
+		new_R = self.kf.R
+		variances = (info[7:14] + 0.0)
+		# variances[:] = (1 - info[6]) * 2.0
+		new_R[0][0] = variances[3]
+		new_R[1][1] = variances[4]
+		new_R[2][2] = variances[5]
+		new_R[3][3] = variances[6]
+		new_R[4][4] = variances[0]
+		new_R[5][5] = variances[1]
+		new_R[6][6] = variances[2]
+		self.kf.update(bbox3D, R=new_R)
 
 		if self.kf.x[3] >= np.pi: self.kf.x[3] -= np.pi * 2    # make the theta still in the rage
 		if self.kf.x[3] < -np.pi: self.kf.x[3] += np.pi * 2

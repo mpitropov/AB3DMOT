@@ -92,9 +92,13 @@ class AB3DMOT(object):			  # A baseline of 3D multi-object tracking
 			self.trackers.pop(t)
 
 		dets_8corner = [convert_3dbox_to_8corner(det_tmp) for det_tmp in dets]
+		# dets_8corner = [convert_3dbox_to_8corner(
+		# 	[det_tmp[0],det_tmp[1],det_tmp[2],det_tmp[3],det_tmp[4]+0.5,det_tmp[5]+0.5,det_tmp[6]]) for det_tmp in dets]
 		if len(dets_8corner) > 0: dets_8corner = np.stack(dets_8corner, axis=0)
 		else: dets_8corner = []
 		trks_8corner = [convert_3dbox_to_8corner(trk_tmp) for trk_tmp in trks]
+		# trks_8corner = [convert_3dbox_to_8corner(
+		# 	[trk_tmp[0],trk_tmp[1],trk_tmp[2],trk_tmp[3],trk_tmp[4]+0.5,trk_tmp[5]+0.5,trk_tmp[6]]) for trk_tmp in trks]
 		if len(trks_8corner) > 0: trks_8corner = np.stack(trks_8corner, axis=0)
 		matched, unmatched_dets, unmatched_trks = associate_detections_to_trackers(dets_8corner, trks_8corner)
 

@@ -28,7 +28,7 @@ if __name__ == '__main__':
 
 		mot_tracker = AB3DMOT() 
 		seq_dets = np.loadtxt(seq_file, delimiter=',')          # load detections, N x 15
-		
+
 		# if no detection in a sequence
 		if len(seq_dets.shape) == 1: seq_dets = np.expand_dims(seq_dets, axis=0) 	
 		if seq_dets.shape[1] == 0:
@@ -47,7 +47,10 @@ if __name__ == '__main__':
 			# get irrelevant information associated with an object, not used for associationg
 			ori_array = seq_dets[seq_dets[:, 0] == frame, -1].reshape((-1, 1))		# orientation
 			other_array = seq_dets[seq_dets[:, 0] == frame, 1:7] 		# other information, e.g, 2D box, ...
-			additional_info = np.concatenate((ori_array, other_array), axis=1)		
+
+			# NOTE: Add variance information
+			variance_array = seq_dets[seq_dets[:, 0] == frame, 15:22]
+			additional_info = np.concatenate((ori_array, other_array, variance_array), axis=1)		
 
 			dets = seq_dets[seq_dets[:,0] == frame, 7:14]            # h, w, l, x, y, z, theta in camera coordinate follwing KITTI convention
 			dets_all = {'dets': dets, 'info': additional_info}
